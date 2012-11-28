@@ -28,9 +28,8 @@ Classes
 '''
 from copy import deepcopy
 
-from django.forms import (BooleanField, CharField, DateTimeField, FloatField, 
-                         MultipleChoiceField, IntegerField, ModelForm, ChoiceField,
-                                                  ValidationError)
+from django.forms import BooleanField, CharField, DateTimeField, FloatField, \
+                         IntegerField, ModelForm, ChoiceField, ValidationError, MultipleChoiceField
 from django.contrib.admin.widgets import AdminSplitDateTime
 from django.utils.translation import ugettext_lazy as _
 
@@ -84,7 +83,11 @@ class BaseDynamicEntityForm(ModelForm):
 
                 defaults.update({'choices': choices})
                 if value:
-                    defaults.update({'initial': value.pk})
+                    keys = []
+                    for val in value.values():
+                        val_id = val.get('id')
+                        keys.append(val_id)
+                    defaults.update({'initial': keys})
 
             elif datatype == attribute.TYPE_DATE:
                 defaults.update({'widget': AdminSplitDateTime})
@@ -117,13 +120,19 @@ class BaseDynamicEntityForm(ModelForm):
         # assign attributes
         for attribute in self.entity.get_all_attributes():
             value = self.cleaned_data.get(attribute.slug)
+
             if attribute.datatype == attribute.TYPE_ENUM:
                 if value:
-                    value = attribute.enum_group.enums.get(pk=value)
+                    enums = []
+                    for enum_id in value:
+                        enum_val = attribute.enum_group.enums.get(pk=enum_id)
+                        enums.append(enum_val)
+                    setattr(self.entity, attribute.slug, enums)
                 else:
                     value = None
 
-            setattr(self.entity, attribute.slug, value)
+            if attribute.datatype != attribute.TYPE_ENUM:
+                setattr(self.entity, attribute.slug, value)
 
         # save entity and its attributes
         if commit:
