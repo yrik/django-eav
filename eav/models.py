@@ -237,11 +237,13 @@ class Attribute(models.Model):
         '''
         for validator in self.get_validators():
             validator(value)
+
         if self.datatype == self.TYPE_ENUM:
-            if value not in self.enum_group.enums.all():
-                raise ValidationError(_(u"%(enum)s is not a valid choice "
-                                        u"for %(attr)s") % \
-                                       {'enum': value, 'attr': self})
+            for val in value:
+                if val not in self.enum_group.enums.all():
+                    raise ValidationError(_(u"%(enum)s is not a valid choice "
+                                            u"for %(attr)s") % \
+                                           {'enum': value, 'attr': self})
 
     def save(self, *args, **kwargs):
         '''
@@ -344,7 +346,7 @@ class Value(models.Model):
     value_int = models.IntegerField(blank=True, null=True)
     value_date = models.DateTimeField(blank=True, null=True)
     value_bool = models.NullBooleanField(blank=True, null=True)
-    value_enum = models.ForeignKey(EnumValue, blank=True, null=True,
+    value_enum = models.ManyToManyField(EnumValue, blank=True, null=True,
                                    related_name='eav_values')
 
     generic_value_id = models.IntegerField(blank=True, null=True)
@@ -371,13 +373,17 @@ class Value(models.Model):
         Raises ``ValidationError`` if this value's attribute is *TYPE_ENUM*
         and value_enum is not a valid choice for this value's attribute.
         '''
-        if self.attribute.datatype == Attribute.TYPE_ENUM and \
-           self.value_enum:
-            if self.value_enum not in self.attribute.enum_group.enums.all():
-                raise ValidationError(_(u"%(choice)s is not a valid " \
-                                        u"choice for %s(attribute)") % \
-                                        {'choice': self.value_enum,
-                                         'attribute': self.attribute})
+        try:
+            if self.attribute.datatype == Attribute.TYPE_ENUM and \
+               self.value_enum:
+                for value in self.value_enum.all():
+                    if value not in self.attribute.enum_group.enums.all():
+                        raise ValidationError(_(u"%(choice)s is not a valid " \
+                                                u"choice for %s(attribute)") % \
+                                                {'choice': value,
+                                                 'attribute': self.attribute})
+        except ValueError:
+            pass
 
     def _get_value(self):
         '''
@@ -389,7 +395,13 @@ class Value(models.Model):
         '''
         Set the object this value is holding
         '''
-        setattr(self, 'value_%s' % self.attribute.datatype, new_value)
+        if self.attribute.datatype == 'enum':
+            if self.value_enum:
+                self.value_enum.clear()
+            for value in new_value:
+                self.value_enum.add(value)
+        else:
+            setattr(self, 'value_%s' % self.attribute.datatype, new_value)
 
     value = property(_get_value, _set_value)
 
