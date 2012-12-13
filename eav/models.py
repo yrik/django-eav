@@ -235,15 +235,19 @@ class Attribute(models.Model):
         Check *value* against the validators returned by
         :meth:`get_validators` for this attribute.
         '''
+        pass
         for validator in self.get_validators():
             validator(value)
 
         if self.datatype == self.TYPE_ENUM:
-            for val in value:
-                if val not in self.enum_group.enums.all():
-                    raise ValidationError(_(u"%(enum)s is not a valid choice "
-                                            u"for %(attr)s") % \
-                                           {'enum': value, 'attr': self})
+            try:
+                for val in value:
+                    if val not in self.enum_group.enums.all():
+                       raise ValidationError(_(u"%(enum)s is not a valid choice "
+                                               u"for %(attr)s") % \
+                                              {'enum': value, 'attr': self})
+            except Exception:
+                pass
 
     def save(self, *args, **kwargs):
         '''
@@ -398,8 +402,11 @@ class Value(models.Model):
         if self.attribute.datatype == 'enum':
             if self.value_enum:
                 self.value_enum.clear()
-            for value in new_value:
-                self.value_enum.add(value)
+            try:
+                for value in new_value:
+                    self.value_enum.add(value)
+            except Exception:
+                pass
         else:
             setattr(self, 'value_%s' % self.attribute.datatype, new_value)
 
