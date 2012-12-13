@@ -125,7 +125,10 @@ class BaseDynamicEntityForm(ModelForm):
                 if value:
                     enums = []
                     for enum_id in value:
-                        enum_val = attribute.enum_group.enums.get(pk=enum_id)
+                        try:
+                            enum_val = attribute.enum_group.enums.get(pk=enum_id)
+                        except Exception:
+                            enum_val = None
                         enums.append(enum_val)
                     setattr(self.entity, attribute.slug, enums)
                 else:

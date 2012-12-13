@@ -400,9 +400,11 @@ class Value(models.Model):
         Set the object this value is holding
         '''
         if self.attribute.datatype == 'enum':
-            if self.value_enum:
-                self.value_enum.clear()
             try:
+                for value in new_value:
+                    pass
+                if self.value_enum:
+                    self.value_enum.clear()
                 for value in new_value:
                     self.value_enum.add(value)
             except Exception:
