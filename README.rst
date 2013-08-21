@@ -91,3 +91,4 @@ Documentation and Examples
 --------------------------
 
 `<http://mvpdev.github.com/django-eav>`_
+
