@@ -415,8 +415,7 @@ class Value(models.Model):
     value = property(_get_value, _set_value)
 
     def __unicode__(self):
-        return u"%s - %s: \"%s\"" % (self.entity, self.attribute.name,
-                                     self.value)
+        return u"%s - %s" % (self.entity, self.attribute.name)
 
 
 class Entity(object):
